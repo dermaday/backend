@@ -1,0 +1,130 @@
+name: Build and deploy backend
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_REPOSITORY: wien0128/dermaday-be
+
+concurrency:
+  group: dermaday-backend-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'manifest-deploy' }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out backend
+        uses: actions/checkout@v4
+
+      - name: Resolve target environment
+        if: github.event_name != 'pull_request'
+        id: target
+        shell: bash
+        run: |
+          case "$GITHUB_REF_NAME" in
+            develop) environment=dev ;;
+            main) environment=production ;;
+            *) echo "Unsupported branch: $GITHUB_REF_NAME" >&2; exit 1 ;;
+          esac
+          echo "environment=$environment" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: wien0128
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        shell: bash
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "dermaday-be:$GITHUB_SHA" \
+            .
+
+      - name: Push immutable image to Docker Hub
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          image="$IMAGE_REPOSITORY:$GITHUB_SHA"
+          docker tag "dermaday-be:$GITHUB_SHA" "$image"
+          docker push "$image"
+
+      - name: Verify public image pull
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          docker logout
+          docker manifest inspect "$IMAGE_REPOSITORY:$GITHUB_SHA" > /dev/null
+
+      - name: Check out manifest repository
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          repository: dermaday/manifest
+          ref: main
+          token: ${{ secrets.MANIFEST_REPO_TOKEN }}
+          path: manifest
+
+      - name: Update target manifest
+        if: github.event_name != 'pull_request'
+        env:
+          ENVIRONMENT: ${{ steps.target.outputs.environment }}
+        shell: bash
+        run: |
+          target="manifest/$ENVIRONMENT/deployment.yml"
+          image="$IMAGE_REPOSITORY:$GITHUB_SHA"
+
+          test "$(grep -Ec '^[[:space:]]+image:[[:space:]]+' "$target")" -eq 1
+          test "$(grep -Ec '^  replicas:[[:space:]]+' "$target")" -eq 1
+
+          sed -E -i \
+            "s#^([[:space:]]*image:)[[:space:]].*#\1 $image#" \
+            "$target"
+          sed -E -i \
+            's#^([[:space:]]*replicas:)[[:space:]].*#\1 1#' \
+            "$target"
+
+          grep -Fq "image: $image" "$target"
+          grep -Eq '^  replicas: 1$' "$target"
+
+      - name: Commit and push manifest
+        if: github.event_name != 'pull_request'
+        env:
+          ENVIRONMENT: ${{ steps.target.outputs.environment }}
+        shell: bash
+        working-directory: manifest
+        run: |
+          target="$ENVIRONMENT/deployment.yml"
+
+          if git diff --quiet -- "$target"; then
+            echo "$target already references $GITHUB_SHA"
+            exit 0
+          fi
+
+          changed_files="$(git diff --name-only)"
+          test "$changed_files" = "$target"
+
+          git config user.name "dermaday-deploy-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$target"
+          test "$(git diff --cached --name-only)" = "$target"
+          git commit -m "deploy($ENVIRONMENT): backend $GITHUB_SHA"
+          git pull --rebase origin main
+          git push origin HEAD:main
