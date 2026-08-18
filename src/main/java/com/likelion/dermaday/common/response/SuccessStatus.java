@@ -24,12 +24,29 @@ public enum SuccessStatus {
     NOTIFICATION_UNREAD_COUNT_GET_SUCCESS(HttpStatus.OK, "안 읽은 알림 개수 조회 성공"),
     NOTIFICATION_READ_SUCCESS(HttpStatus.OK, "알림 읽음 처리 성공"),
     MEMBER_DEVICE_FCM_TOKEN_REGISTER_SUCCESS(HttpStatus.OK, "FCM 토큰 등록 성공"),
+    TREATMENT_OPTION_LIST_GET_SUCCESS(HttpStatus.OK, "시술 선택지 조회 성공"),
+    TREATMENT_LIST_GET_SUCCESS(HttpStatus.OK, "시술 기록 목록 조회 성공"),
+    TREATMENT_GET_SUCCESS(HttpStatus.OK, "시술 기록 조회 성공"),
+    TREATMENT_DELETE_SUCCESS(HttpStatus.OK, "시술 기록 삭제 성공"),
+    COSMETIC_OPTION_LIST_GET_SUCCESS(HttpStatus.OK, "화장품 선택지 조회 성공"),
+    COSMETIC_LIST_GET_SUCCESS(HttpStatus.OK, "화장품 목록 조회 성공"),
+    COSMETIC_GET_SUCCESS(HttpStatus.OK, "화장품 조회 성공"),
+    COSMETIC_UPDATE_SUCCESS(HttpStatus.OK, "화장품 수정 성공"),
+    COSMETIC_DELETE_SUCCESS(HttpStatus.OK, "화장품 삭제 성공"),
+    SKIN_PROFILE_GET_SUCCESS(HttpStatus.OK, "피부 타입 조회 성공"),
+    SKIN_PROFILE_OPTION_LIST_GET_SUCCESS(HttpStatus.OK, "피부 타입 선택지 조회 성공"),
+    SKIN_PROFILE_UPDATE_SUCCESS(HttpStatus.OK, "피부 타입 저장 성공"),
+    SKIN_PROFILE_DELETE_SUCCESS(HttpStatus.OK, "피부 타입 삭제 성공"),
+    WHS_GET_SUCCESS(HttpStatus.OK, "WHS 정보 조회 성공"),
+    WHS_IMPORT_SUCCESS(HttpStatus.OK, "WHS 정보 등록 성공"),
 
 
     /// 201 CREATED
     MEMBER_SIGNUP_SUCCESS(HttpStatus.CREATED, "회원가입 성공"),
     IMAGE_UPLOAD_CREATE_SUCCESS(HttpStatus.CREATED, "이미지 업로드 성공"),
     MEMBER_ADDITIONAL_INFO_POST_SUCCESS(HttpStatus.CREATED, "추가 정보 입력 성공"),
+    TREATMENT_CREATE_SUCCESS(HttpStatus.CREATED, "시술 기록 등록 성공"),
+    COSMETIC_CREATE_SUCCESS(HttpStatus.CREATED, "화장품 등록 성공"),
 
     /// 204 NO CONTENT
     IMAGE_DELETE_SUCCESS(HttpStatus.NO_CONTENT, "이미지 삭제 성공"),
