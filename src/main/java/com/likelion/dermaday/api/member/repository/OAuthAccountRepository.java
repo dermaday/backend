@@ -11,4 +11,7 @@ public interface OAuthAccountRepository extends JpaRepository<OAuthAccount, Long
 
     @EntityGraph(attributePaths = "member")
     Optional<OAuthAccount> findByProviderAndProviderUserId(OAuthProvider provider, String providerUserId);
+
+    @EntityGraph(attributePaths = "member")
+    Optional<OAuthAccount> findByMember_Id(Long memberId);
 }

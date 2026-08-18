@@ -29,6 +29,9 @@ class MemberServiceTest {
     @Mock
     private OAuthAccountRepository oAuthAccountRepository;
 
+    @Mock
+    private MemberDataDeletionService memberDataDeletionService;
+
     @InjectMocks
     private MemberService memberService;
 
@@ -47,19 +50,20 @@ class MemberServiceTest {
     }
 
     @Test
-    void reusesAndReactivatesExistingOAuthAccount() {
+    void createsFreshMemberAndReconnectsWithdrawnOAuthAccount() {
         Member member = Member.createUser("이전 이름");
         member.withdraw();
         OAuthAccount existing = OAuthAccount.create(member, OAuthProvider.NAVER, "naver-id");
         when(oAuthAccountRepository.findByProviderAndProviderUserId(OAuthProvider.NAVER, "naver-id"))
                 .thenReturn(Optional.of(existing));
+        when(memberRepository.save(any(Member.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         OAuthLoginResponse result = memberService.loginOrCreate(
                 new OAuthLoginRequest(OAuthProvider.NAVER, "naver-id", "최신 이름")
         );
 
-        assertTrue(member.isActive());
-        assertEquals("최신 이름", member.getDisplayName());
+        assertTrue(existing.getMember().isActive());
+        assertEquals("최신 이름", existing.getMember().getDisplayName());
         assertEquals("최신 이름", result.displayName());
         assertEquals(OAuthProvider.NAVER, result.provider());
     }

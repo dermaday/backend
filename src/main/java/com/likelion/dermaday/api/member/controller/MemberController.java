@@ -44,7 +44,10 @@ public class MemberController {
     }
 
     @DeleteMapping("/me")
-    @Operation(summary = "회원 탈퇴", description = "회원을 소프트 탈퇴 처리하고 인증 쿠키를 삭제합니다.")
+    @Operation(
+            summary = "회원 탈퇴",
+            description = "회원 데이터는 삭제하고 OAuth2 공급자 식별 정보는 재가입을 위해 보관합니다."
+    )
     public ResponseEntity<ApiResponse<Void>> withdraw(
             @AuthenticationPrincipal MemberPrincipal principal,
             HttpServletResponse response

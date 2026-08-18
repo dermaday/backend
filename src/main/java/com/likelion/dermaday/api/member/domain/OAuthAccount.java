@@ -17,6 +17,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(
         name = "oauth_accounts",
@@ -41,8 +43,8 @@ public class OAuthAccount extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "member_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @Enumerated(EnumType.STRING)
@@ -52,6 +54,9 @@ public class OAuthAccount extends BaseTimeEntity {
     @Column(name = "provider_user_id", nullable = false, length = 255)
     private String providerUserId;
 
+    @Column
+    private LocalDateTime deletedAt;
+
     private OAuthAccount(Member member, OAuthProvider provider, String providerUserId) {
         this.member = requireMember(member);
         this.provider = requireProvider(provider);
@@ -60,6 +65,20 @@ public class OAuthAccount extends BaseTimeEntity {
 
     public static OAuthAccount create(Member member, OAuthProvider provider, String providerUserId) {
         return new OAuthAccount(member, provider, providerUserId);
+    }
+
+    public void withdraw() {
+        this.member = null;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void reactivate(Member member) {
+        this.member = requireMember(member);
+        this.deletedAt = null;
+    }
+
+    public boolean isWithdrawn() {
+        return this.deletedAt != null || this.member == null;
     }
 
     private static Member requireMember(Member member) {

@@ -10,11 +10,11 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MemberAuthenticationService {
 
     private final MemberRepository memberRepository;
 
-    @Transactional(readOnly = true)
     public Optional<MemberAuthenticationResponse> findActiveMember(Long memberId) {
         return memberRepository.findById(memberId)
                 .filter(member -> member.isActive())
