@@ -26,10 +26,11 @@ class JwtTokenServiceTest {
         JwtDecoder decoder = config.jwtDecoder(secretKey);
         JwtTokenService service = new JwtTokenService(encoder, properties);
 
-        String token = service.createAccessToken(42L, MemberRole.USER, OAuthProvider.KAKAO);
+        String token = service.createAccessToken(42L, "회원 이름", MemberRole.USER, OAuthProvider.KAKAO);
         Jwt jwt = decoder.decode(token);
 
         assertEquals("42", jwt.getSubject());
+        assertEquals("회원 이름", jwt.getClaimAsString(JwtTokenService.DISPLAY_NAME_CLAIM));
         assertEquals("USER", jwt.getClaimAsString(JwtTokenService.ROLE_CLAIM));
         assertEquals("KAKAO", jwt.getClaimAsString(JwtTokenService.PROVIDER_CLAIM));
         assertTrue(Duration.between(jwt.getIssuedAt(), jwt.getExpiresAt()).equals(Duration.ofHours(24)));

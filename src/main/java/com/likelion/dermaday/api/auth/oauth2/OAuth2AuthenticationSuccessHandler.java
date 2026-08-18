@@ -36,6 +36,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
         String accessToken = jwtTokenService.createAccessToken(
                 principal.memberId(),
+                principal.displayName(),
                 principal.role(),
                 principal.provider()
         );

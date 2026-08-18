@@ -18,13 +18,19 @@ import java.time.Instant;
 public class JwtTokenService {
 
     public static final String ISSUER = "dermaday";
+    public static final String DISPLAY_NAME_CLAIM = "displayName";
     public static final String ROLE_CLAIM = "role";
     public static final String PROVIDER_CLAIM = "provider";
 
     private final JwtEncoder jwtEncoder;
     private final AppProperties properties;
 
-    public String createAccessToken(Long memberId, MemberRole role, OAuthProvider provider) {
+    public String createAccessToken(
+            Long memberId,
+            String displayName,
+            MemberRole role,
+            OAuthProvider provider
+    ) {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plus(properties.jwt().accessTokenTtl());
 
@@ -33,6 +39,7 @@ public class JwtTokenService {
                 .subject(memberId.toString())
                 .issuedAt(issuedAt)
                 .expiresAt(expiresAt)
+                .claim(DISPLAY_NAME_CLAIM, displayName)
                 .claim(ROLE_CLAIM, role.name())
                 .claim(PROVIDER_CLAIM, provider.name())
                 .build();
