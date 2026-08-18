@@ -18,13 +18,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = "management.endpoint.health.probes.enabled=true")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class SecurityIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Test
+    void permitsKubernetesHealthProbesWithoutAuthentication() throws Exception {
+        mockMvc.perform(get("/actuator/health/liveness"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/actuator/health/readiness"))
+                .andExpect(status().isOk());
+    }
 
     @Test
     void returnsCsrfTokenAndAllowsConfiguredFrontendOrigin() throws Exception {
