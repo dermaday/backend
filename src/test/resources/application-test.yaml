@@ -55,3 +55,7 @@ app:
     name: DERMADAY_ACCESS_TOKEN
     secure: false
     same-site: Lax
+  storage:
+    region: ap-northeast-2
+    bucket: dermaday-test
+    presigned-url-ttl: PT10M
