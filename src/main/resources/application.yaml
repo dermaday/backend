@@ -84,7 +84,7 @@ app:
 
   jwt:
     secret: ${JWT_SECRET}
-    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:PT1D}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:PT24H}
 
   auth-cookie:
     name: ${AUTH_COOKIE_NAME:DERMADAY_ACCESS_TOKEN}
