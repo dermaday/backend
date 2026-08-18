@@ -1,0 +1,20 @@
+package com.likelion.dermaday.api.member.domain;
+
+import java.util.Locale;
+
+public enum OAuthProvider {
+    KAKAO,
+    NAVER;
+
+    public static OAuthProvider fromRegistrationId(String registrationId) {
+        if (registrationId == null) {
+            throw new IllegalArgumentException("OAuth2 registration id is required");
+        }
+
+        return valueOf(registrationId.toUpperCase(Locale.ROOT));
+    }
+
+    public String registrationId() {
+        return name().toLowerCase(Locale.ROOT);
+    }
+}
