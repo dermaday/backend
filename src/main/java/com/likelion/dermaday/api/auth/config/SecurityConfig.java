@@ -61,6 +61,11 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/actuator/health",
                                 "/actuator/info",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs.yaml",
+                                "/swagger-ui/**",
+                                "/swagger-ui",
+                                "/swagger-ui.html",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/api/v1/auth/csrf",
@@ -106,7 +111,9 @@ public class SecurityConfig {
     public BearerTokenResolver cookieBearerTokenResolver() {
         return request -> {
             String requestUri = request.getRequestURI();
-            if (requestUri.startsWith("/oauth2/")
+            if (requestUri.startsWith("/swagger-ui")
+                    || requestUri.startsWith("/v3/api-docs")
+                    || requestUri.startsWith("/oauth2/")
                     || requestUri.startsWith("/login/oauth2/")
                     || requestUri.equals("/api/v1/auth/csrf")
                     || requestUri.equals("/api/v1/auth/logout")) {

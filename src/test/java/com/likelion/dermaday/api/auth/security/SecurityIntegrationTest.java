@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,6 +36,30 @@ class SecurityIntegrationTest {
                 .andExpect(cookie().exists("XSRF-TOKEN"))
                 .andExpect(jsonPath("$.data.headerName").value("X-XSRF-TOKEN"))
                 .andExpect(jsonPath("$.data.token").isNotEmpty());
+    }
+
+    @Test
+    void servesOpenApiDocumentationEvenWithInvalidAccessCookie() throws Exception {
+        mockMvc.perform(get("/v3/api-docs")
+                        .cookie(new Cookie("DERMADAY_ACCESS_TOKEN", "invalid-token")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("Dermaday API"))
+                .andExpect(jsonPath("$.components.securitySchemes.cookieAuth.type").value("apiKey"))
+                .andExpect(jsonPath("$.components.securitySchemes.cookieAuth.in").value("cookie"))
+                .andExpect(jsonPath("$.components.securitySchemes.cookieAuth.name")
+                        .value("DERMADAY_ACCESS_TOKEN"));
+    }
+
+    @Test
+    void servesSwaggerUi() throws Exception {
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/swagger-ui/swagger-initializer.js"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("withCredentials")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("XSRF-TOKEN")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("X-XSRF-TOKEN")));
     }
 
     @Test
