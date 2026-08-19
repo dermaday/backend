@@ -39,6 +39,7 @@ public enum SuccessStatus {
     SKIN_PROFILE_DELETE_SUCCESS(HttpStatus.OK, "피부 타입 삭제 성공"),
     WHS_GET_SUCCESS(HttpStatus.OK, "WHS 정보 조회 성공"),
     WHS_IMPORT_SUCCESS(HttpStatus.OK, "WHS 정보 등록 성공"),
+    REPORT_ROUTINE_PREVIEW_GET_SUCCESS(HttpStatus.OK, "루틴 미리보기 조회 성공"),
 
 
     /// 201 CREATED
@@ -47,6 +48,7 @@ public enum SuccessStatus {
     MEMBER_ADDITIONAL_INFO_POST_SUCCESS(HttpStatus.CREATED, "추가 정보 입력 성공"),
     TREATMENT_CREATE_SUCCESS(HttpStatus.CREATED, "시술 기록 등록 성공"),
     COSMETIC_CREATE_SUCCESS(HttpStatus.CREATED, "화장품 등록 성공"),
+    REPORT_CREATE_SUCCESS(HttpStatus.CREATED, "리포트 생성 성공"),
 
     /// 204 NO CONTENT
     IMAGE_DELETE_SUCCESS(HttpStatus.NO_CONTENT, "이미지 삭제 성공"),
