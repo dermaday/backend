@@ -1,7 +1,7 @@
 package com.likelion.dermaday.api.report.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.likelion.dermaday.api.report.dto.ReportResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -93,7 +93,10 @@ public class ReportLlmClient {
                 throw new IllegalStateException("LLM 응답 제품 순서 불일치");
             }
             List<String> tags = new ArrayList<>();
-            node.path("tags").forEach(t -> tags.add(t.asText()));
+            JsonNode tagsNode = node.path("tags");
+            for (int j = 0; j < tagsNode.size(); j++) {
+                tags.add(tagsNode.get(j).asText());
+            }
             merged.add(new ReportResponse.RoutineStep(
                     step.order(),
                     step.productName(),
