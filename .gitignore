@@ -36,6 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 
+/docs/
 
 ### env (API 키 유출 방지 — stash된 .gitignore 수정분 재적용) ###
 *.env
