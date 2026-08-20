@@ -18,6 +18,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,5 +68,21 @@ class MemberServiceTest {
         assertEquals("최신 이름", existing.getMember().getDisplayName());
         assertEquals("최신 이름", result.displayName());
         assertEquals(OAuthProvider.NAVER, result.provider());
+    }
+
+    @Test
+    void updatesExistingActiveMemberWithoutCreatingAnotherMember() {
+        Member member = Member.createUser("기존 이름");
+        OAuthAccount existing = OAuthAccount.create(member, OAuthProvider.KAKAO, "kakao-id");
+        when(oAuthAccountRepository.findByProviderAndProviderUserId(OAuthProvider.KAKAO, "kakao-id"))
+                .thenReturn(Optional.of(existing));
+
+        OAuthLoginResponse result = memberService.loginOrCreate(
+                new OAuthLoginRequest(OAuthProvider.KAKAO, "kakao-id", "변경된 이름")
+        );
+
+        assertEquals("변경된 이름", member.getDisplayName());
+        assertEquals("변경된 이름", result.displayName());
+        verify(memberRepository, never()).save(any(Member.class));
     }
 }

@@ -6,6 +6,7 @@ import com.likelion.dermaday.api.cosmetic.dto.request.CreateCosmeticRequest;
 import com.likelion.dermaday.api.cosmetic.dto.response.CosmeticResponse;
 import com.likelion.dermaday.api.cosmetic.repository.CosmeticRepository;
 import com.likelion.dermaday.api.cosmetic.service.CosmeticService;
+import com.likelion.dermaday.api.member.domain.Member;
 import com.likelion.dermaday.api.member.domain.OAuthAccount;
 import com.likelion.dermaday.api.member.domain.OAuthProvider;
 import com.likelion.dermaday.api.member.dto.request.OAuthLoginRequest;
@@ -22,6 +23,7 @@ import com.likelion.dermaday.api.treatment.dto.request.TreatmentItemRequest;
 import com.likelion.dermaday.api.treatment.dto.response.TreatmentResponse;
 import com.likelion.dermaday.api.treatment.repository.TreatmentRecordRepository;
 import com.likelion.dermaday.api.treatment.service.TreatmentService;
+import com.likelion.dermaday.common.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +37,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
@@ -109,5 +112,28 @@ class MemberLifecycleIntegrationTest {
         assertNotEquals(firstLogin.memberId(), rejoined.memberId());
         assertTrue(memberRepository.existsById(rejoined.memberId()));
         assertFalse(withdrawnAccount.isWithdrawn());
+    }
+
+    @Test
+    void preservesMemberWhenOAuthAccountIsMissing() {
+        Member member = memberRepository.save(Member.createUser("OAuth 없는 회원"));
+
+        assertThrows(NotFoundException.class, () -> memberService.withdraw(member.getId()));
+
+        assertTrue(memberRepository.existsById(member.getId()));
+    }
+
+    @Test
+    void treatsSameProviderUserIdFromDifferentProvidersAsDifferentAccounts() {
+        OAuthLoginResponse kakao = memberService.loginOrCreate(
+                new OAuthLoginRequest(OAuthProvider.KAKAO, "same-id", "카카오 회원")
+        );
+        OAuthLoginResponse naver = memberService.loginOrCreate(
+                new OAuthLoginRequest(OAuthProvider.NAVER, "same-id", "네이버 회원")
+        );
+
+        assertNotEquals(kakao.memberId(), naver.memberId());
+        assertTrue(memberRepository.existsById(kakao.memberId()));
+        assertTrue(memberRepository.existsById(naver.memberId()));
     }
 }
