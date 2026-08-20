@@ -16,6 +16,8 @@ public interface TreatmentRecordRepository extends JpaRepository<TreatmentRecord
     @EntityGraph(attributePaths = "items")
     Optional<TreatmentRecord> findByIdAndMember_Id(Long id, Long memberId);
 
+    boolean existsByIdAndMember_Id(Long id, Long memberId);
+
     @EntityGraph(attributePaths = "items")
     Optional<TreatmentRecord> findFirstByMember_IdAndSourceOrderByCreatedAtAsc(
             Long memberId,

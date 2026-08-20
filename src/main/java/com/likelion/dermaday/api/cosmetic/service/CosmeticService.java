@@ -7,6 +7,8 @@ import com.likelion.dermaday.api.cosmetic.dto.response.CosmeticResponse;
 import com.likelion.dermaday.api.cosmetic.repository.CosmeticRepository;
 import com.likelion.dermaday.api.image.event.MemberImagesDeletionRequested;
 import com.likelion.dermaday.api.image.service.ImageStorageService;
+import com.likelion.dermaday.api.notification.event.CosmeticNotificationCancellationRequested;
+import com.likelion.dermaday.api.notification.event.TreatmentNotificationCancellationRequested;
 import com.likelion.dermaday.api.treatment.domain.TreatmentRecord;
 import com.likelion.dermaday.api.treatment.repository.TreatmentRecordRepository;
 import com.likelion.dermaday.common.exception.NotFoundException;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.Objects;
 
 @Service
@@ -74,8 +77,15 @@ public class CosmeticService {
     @Transactional
     public void delete(Long memberId, Long cosmeticId) {
         Cosmetic cosmetic = getOwnedCosmetic(memberId, cosmeticId);
+        Long treatmentRecordId = cosmetic.getTreatmentRecord().getId();
         requestImageDeletion(memberId, cosmetic.getImageObjectKey());
         cosmeticRepository.delete(cosmetic);
+        eventPublisher.publishEvent(new CosmeticNotificationCancellationRequested(
+                memberId,
+                treatmentRecordId,
+                cosmeticId,
+                Instant.now()
+        ));
     }
 
     @Transactional
@@ -83,6 +93,7 @@ public class CosmeticService {
         List<String> imageKeys = cosmeticRepository.findImageObjectKeysByTreatmentRecord(treatmentRecordId, memberId);
         requestImageDeletion(memberId, imageKeys);
         cosmeticRepository.deleteAllByTreatmentRecord_IdAndTreatmentRecord_Member_Id(treatmentRecordId, memberId);
+        eventPublisher.publishEvent(new TreatmentNotificationCancellationRequested(memberId, treatmentRecordId));
     }
 
     @Transactional

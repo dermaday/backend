@@ -100,6 +100,15 @@ app:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-5.6-terra}
 
+  push:
+    enabled: ${PUSH_ENABLED:false}
+    project-id: ${FIREBASE_PROJECT_ID:}
+    zone-id: ${PUSH_ZONE_ID:Asia/Seoul}
+    send-time: ${PUSH_SEND_TIME:09:00}
+    home-url: ${PUSH_HOME_URL:https://dermaday.me/home}
+    dispatch-grace: ${PUSH_DISPATCH_GRACE:PT1M}
+    poll-interval: ${PUSH_POLL_INTERVAL:PT10S}
+
 springdoc:
   api-docs:
     path: /v3/api-docs

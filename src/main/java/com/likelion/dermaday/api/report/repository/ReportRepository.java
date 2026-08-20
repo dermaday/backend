@@ -8,4 +8,8 @@ import java.util.Optional;
 public interface ReportRepository extends JpaRepository<Report, String> {
 
     Optional<Report> findByIdAndMemberId(String id, Long memberId);
+
+    void deleteAllByMemberId(Long memberId);
+
+    void deleteByMemberIdAndTreatmentRecordId(Long memberId, Long treatmentRecordId);
 }

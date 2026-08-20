@@ -24,6 +24,7 @@ public record ReportInput(
     }
 
     public record Cosmetic(
+            Long id,
             String name,
             CosmeticType productType,
             Set<IngredientType> ingredients

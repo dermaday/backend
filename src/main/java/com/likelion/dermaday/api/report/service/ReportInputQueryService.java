@@ -53,6 +53,7 @@ public class ReportInputQueryService {
 
     private ReportInput.Cosmetic toCosmeticInput(Cosmetic cosmetic) {
         return new ReportInput.Cosmetic(
+                cosmetic.getId(),
                 cosmetic.getName(),
                 cosmetic.getProductType(),
                 Set.copyOf(cosmetic.getIngredients())

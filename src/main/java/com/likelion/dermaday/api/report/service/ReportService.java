@@ -9,6 +9,7 @@ import com.likelion.dermaday.api.report.domain.RoutineStatus;
 import com.likelion.dermaday.api.report.dto.ReportInput;
 import com.likelion.dermaday.api.report.dto.ReportResponse;
 import com.likelion.dermaday.api.report.dto.RoutinePreviewResponse;
+import com.likelion.dermaday.api.report.event.ReportCreated;
 import com.likelion.dermaday.api.report.repository.ReportRepository;
 import com.likelion.dermaday.api.skin.domain.SkinType;
 import com.likelion.dermaday.api.treatment.domain.TreatmentReaction;
@@ -16,10 +17,12 @@ import com.likelion.dermaday.api.treatment.domain.TreatmentRecord;
 import com.likelion.dermaday.api.treatment.repository.TreatmentRecordRepository;
 import com.likelion.dermaday.common.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -112,13 +116,14 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final ReportLlmClient reportLlmClient;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ReportResponse create(Long memberId, String displayName, Long treatmentRecordId) {
         ReportInput input = reportInputQueryService.load(memberId, resolveRecordId(memberId, treatmentRecordId));
         LocalDate today = LocalDate.now(KST);
         String reportId = "rpt-" + UUID.randomUUID();
-        reportRepository.save(Report.create(reportId, memberId, input.treatmentRecordId(),
+        reportRepository.saveAndFlush(Report.create(reportId, memberId, input.treatmentRecordId(),
                 objectMapper.writeValueAsString(input)));
 
         ReportResponse.SkinTypeSection skinType = toSkinTypeSection(input.skinType());
@@ -151,7 +156,7 @@ public class ReportService {
             long maxDaysLeft = restricted.stream()
                     .mapToLong(c -> c.daysLeft() == null ? 1L : c.daysLeft())
                     .max().orElse(1L);
-            return new ReportResponse(reportId, today,
+            ReportResponse response = new ReportResponse(reportId, today,
                     new ReportResponse.Header(displayName, HeaderStatus.COUNTDOWN, "D-" + maxDaysLeft, "모든 화장품 해금까지"),
                     skinType, treatments,
                     new ReportResponse.Products(usable, restricted, null),
@@ -159,6 +164,8 @@ public class ReportService {
                             "모든 화장품 해금 후 확인할 수 있어요", "미리 확인하기", null, null, null, null),
                     null, papers(evidenceIds),
                     new ReportResponse.LlmMeta(false, null, List.of(), false), DISCLAIMER);
+            publishReportCreated(memberId, input, cards, response);
+            return response;
         }
 
         List<ReportResponse.RoutineStep> steps = routineSteps(input.cosmetics(), ROUTINE_ORDER);
@@ -167,7 +174,7 @@ public class ReportService {
         if (!withLayering.contains("P073")) {
             withLayering.add("P073");
         }
-        return new ReportResponse(reportId, today,
+        ReportResponse response = new ReportResponse(reportId, today,
                 new ReportResponse.Header(displayName, HeaderStatus.UNLOCK_DONE, null, "모든 화장품이 해금되었어요"),
                 skinType, treatments,
                 new ReportResponse.Products(usable, List.of(), "모든 화장품이 해금되었어요"),
@@ -180,6 +187,8 @@ public class ReportService {
                         tips.applied() ? List.of("routine.steps[].tip", "routine.steps[].tags") : List.of(),
                         !tips.applied()),
                 DISCLAIMER);
+        publishReportCreated(memberId, input, cards, response);
+        return response;
     }
 
     public RoutinePreviewResponse previewRoutine(Long memberId, String reportId) {
@@ -334,5 +343,30 @@ public class ReportService {
             card.evidenceIds().stream().filter(id -> !ids.contains(id)).forEach(ids::add);
         }
         return ids;
+    }
+
+    private void publishReportCreated(
+            Long memberId,
+            ReportInput input,
+            List<ReportResponse.ProductCard> cards,
+            ReportResponse response
+    ) {
+        if (input.cosmetics().size() != cards.size()) {
+            throw new IllegalStateException("리포트 화장품과 판정 결과 수가 일치하지 않습니다.");
+        }
+        List<ReportCreated.ProductSnapshot> products = IntStream.range(0, cards.size())
+                .mapToObj(index -> new ReportCreated.ProductSnapshot(
+                        input.cosmetics().get(index).id(),
+                        input.cosmetics().get(index).name(),
+                        cards.get(index).unlockDate()
+                ))
+                .toList();
+        eventPublisher.publishEvent(new ReportCreated(
+                response.reportId(),
+                memberId,
+                input.treatmentRecordId(),
+                Instant.now(),
+                products
+        ));
     }
 }

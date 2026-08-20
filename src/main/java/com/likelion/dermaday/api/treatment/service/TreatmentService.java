@@ -3,6 +3,7 @@ package com.likelion.dermaday.api.treatment.service;
 import com.likelion.dermaday.api.cosmetic.service.CosmeticService;
 import com.likelion.dermaday.api.member.domain.Member;
 import com.likelion.dermaday.api.member.repository.MemberRepository;
+import com.likelion.dermaday.api.report.service.ReportDataDeletionService;
 import com.likelion.dermaday.api.treatment.domain.TreatmentItem;
 import com.likelion.dermaday.api.treatment.domain.TreatmentRecord;
 import com.likelion.dermaday.api.treatment.domain.TreatmentRecordSource;
@@ -30,6 +31,7 @@ public class TreatmentService {
     private final TreatmentRecordRepository treatmentRecordRepository;
     private final MemberRepository memberRepository;
     private final CosmeticService cosmeticService;
+    private final ReportDataDeletionService reportDataDeletionService;
 
     public List<TreatmentResponse> findAll(Long memberId) {
         return treatmentRecordRepository.findAllByMember_IdOrderByCreatedAtDesc(memberId).stream()
@@ -71,6 +73,7 @@ public class TreatmentService {
     @Transactional
     public void delete(Long memberId, Long recordId) {
         TreatmentRecord record = getOwnedRecord(memberId, recordId);
+        reportDataDeletionService.deleteByTreatmentRecord(memberId, recordId);
         cosmeticService.deleteAllByTreatmentRecord(memberId, recordId);
         treatmentRecordRepository.delete(record);
     }

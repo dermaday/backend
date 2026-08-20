@@ -41,10 +41,14 @@ public class Member extends BaseTimeEntity {
     @Column
     private LocalDateTime withdrawnAt;
 
+    @Column(name = "push_enabled")
+    private Boolean pushEnabled;
+
     private Member(String displayName) {
         this.displayName = validateDisplayName(displayName);
         this.role = MemberRole.USER;
         this.status = MemberStatus.ACTIVE;
+        this.pushEnabled = false;
     }
 
     public static Member createUser(String displayName) {
@@ -64,6 +68,14 @@ public class Member extends BaseTimeEntity {
 
     public boolean isActive() {
         return this.status == MemberStatus.ACTIVE;
+    }
+
+    public boolean isPushEnabled() {
+        return Boolean.TRUE.equals(pushEnabled);
+    }
+
+    public void changePushEnabled(boolean enabled) {
+        this.pushEnabled = enabled;
     }
 
     private static String validateDisplayName(String displayName) {
