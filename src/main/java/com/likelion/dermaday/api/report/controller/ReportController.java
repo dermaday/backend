@@ -43,7 +43,11 @@ public class ReportController {
 
     @GetMapping("/{reportId}/routine-preview")
     @Operation(summary = "루틴 미리보기", description = "모든 화장품이 해금되었다고 가정한 추천 루틴을 조회합니다.")
-    public ResponseEntity<ApiResponse<RoutinePreviewResponse>> previewRoutine(@PathVariable String reportId) {
-        return ApiResponse.success(SuccessStatus.REPORT_ROUTINE_PREVIEW_GET_SUCCESS, reportService.previewRoutine(reportId));
+    public ResponseEntity<ApiResponse<RoutinePreviewResponse>> previewRoutine(
+            @AuthenticationPrincipal MemberPrincipal principal,
+            @PathVariable String reportId
+    ) {
+        return ApiResponse.success(SuccessStatus.REPORT_ROUTINE_PREVIEW_GET_SUCCESS,
+                reportService.previewRoutine(principal.id(), reportId));
     }
 }

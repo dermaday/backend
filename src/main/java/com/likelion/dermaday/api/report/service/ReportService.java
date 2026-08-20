@@ -4,10 +4,12 @@ import com.likelion.dermaday.api.cosmetic.domain.CosmeticType;
 import com.likelion.dermaday.api.cosmetic.domain.IngredientType;
 import com.likelion.dermaday.api.report.domain.HeaderStatus;
 import com.likelion.dermaday.api.report.domain.ProductStatus;
+import com.likelion.dermaday.api.report.domain.Report;
 import com.likelion.dermaday.api.report.domain.RoutineStatus;
 import com.likelion.dermaday.api.report.dto.ReportInput;
 import com.likelion.dermaday.api.report.dto.ReportResponse;
 import com.likelion.dermaday.api.report.dto.RoutinePreviewResponse;
+import com.likelion.dermaday.api.report.repository.ReportRepository;
 import com.likelion.dermaday.api.skin.domain.SkinType;
 import com.likelion.dermaday.api.treatment.domain.TreatmentReaction;
 import com.likelion.dermaday.api.treatment.domain.TreatmentRecord;
@@ -16,6 +18,7 @@ import com.likelion.dermaday.common.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -24,7 +27,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -107,15 +109,17 @@ public class ReportService {
 
     private final ReportInputQueryService reportInputQueryService;
     private final TreatmentRecordRepository treatmentRecordRepository;
+    private final ReportRepository reportRepository;
     private final ReportLlmClient reportLlmClient;
+    private final ObjectMapper objectMapper;
 
-    private final Map<String, ReportInput> snapshots = new ConcurrentHashMap<>();
-
+    @Transactional
     public ReportResponse create(Long memberId, String displayName, Long treatmentRecordId) {
         ReportInput input = reportInputQueryService.load(memberId, resolveRecordId(memberId, treatmentRecordId));
         LocalDate today = LocalDate.now(KST);
         String reportId = "rpt-" + UUID.randomUUID();
-        snapshots.put(reportId, input);
+        reportRepository.save(Report.create(reportId, memberId, input.treatmentRecordId(),
+                objectMapper.writeValueAsString(input)));
 
         ReportResponse.SkinTypeSection skinType = toSkinTypeSection(input.skinType());
         List<ReportResponse.TreatmentRow> treatments = input.treatments().stream()
@@ -178,11 +182,10 @@ public class ReportService {
                 DISCLAIMER);
     }
 
-    public RoutinePreviewResponse previewRoutine(String reportId) {
-        ReportInput input = snapshots.get(reportId);
-        if (input == null) {
-            throw new NotFoundException("해당 리포트를 찾을 수 없습니다.");
-        }
+    public RoutinePreviewResponse previewRoutine(Long memberId, String reportId) {
+        Report report = reportRepository.findByIdAndMemberId(reportId, memberId)
+                .orElseThrow(() -> new NotFoundException("해당 리포트를 찾을 수 없습니다."));
+        ReportInput input = objectMapper.readValue(report.getInputPayload(), ReportInput.class);
         List<ReportResponse.RoutineStep> steps = routineSteps(input.cosmetics(), ROUTINE_ORDER);
         ReportLlmClient.TipResult tips = reportLlmClient.writeTips(steps, input.skinType().getDisplayName());
         return new RoutinePreviewResponse(RoutineStatus.PREVIEW, "해금이 끝나면 이런 루틴을 추천해요", tips.steps());
