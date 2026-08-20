@@ -67,6 +67,7 @@ public class CosmeticService {
         if (!Objects.equals(previousImageKey, cosmetic.getImageObjectKey())) {
             requestImageDeletion(memberId, previousImageKey);
         }
+        cosmeticRepository.flush();
         return CosmeticResponse.from(cosmetic);
     }
 

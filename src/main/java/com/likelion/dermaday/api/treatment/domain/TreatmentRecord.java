@@ -70,6 +70,10 @@ public class TreatmentRecord extends BaseTimeEntity {
                 .orElseThrow(() -> new IllegalStateException("Treatment record must contain at least one item"));
     }
 
+    public List<TreatmentItem> getItems() {
+        return List.copyOf(items);
+    }
+
     private void addItems(List<TreatmentItem> items) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("At least one treatment item is required");

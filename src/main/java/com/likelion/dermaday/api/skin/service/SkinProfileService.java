@@ -34,7 +34,7 @@ public class SkinProfileService {
                     return existing;
                 })
                 .orElseGet(() -> create(memberId, skinType));
-        return SkinProfileResponse.from(skinProfileRepository.save(profile));
+        return SkinProfileResponse.from(skinProfileRepository.saveAndFlush(profile));
     }
 
     @Transactional

@@ -92,6 +92,10 @@ public class Cosmetic extends BaseTimeEntity {
         this.imageObjectKey = normalizeImageObjectKey(imageObjectKey);
     }
 
+    public Set<IngredientType> getIngredients() {
+        return Set.copyOf(ingredients);
+    }
+
     private String validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Cosmetic name must not be blank");
